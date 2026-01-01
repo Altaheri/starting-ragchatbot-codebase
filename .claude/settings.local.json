@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(start \"\" \"D:/OneDrive - King Saud University Faculty/research and learn/deeplearning.ai/Claude Code/DEMO/particles.html\")",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_take_screenshot"
+    ]
+  }
+}
