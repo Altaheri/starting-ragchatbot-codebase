@@ -59,3 +59,10 @@ class SessionManager:
         """Clear all messages from a session"""
         if session_id in self.sessions:
             self.sessions[session_id] = []
+
+    def delete_session(self, session_id: str):
+        """Delete a session entirely from memory"""
+        if session_id in self.sessions:
+            del self.sessions[session_id]
+        else:
+            raise KeyError(f"Session {session_id} not found")

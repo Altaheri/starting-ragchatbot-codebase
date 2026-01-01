@@ -28,8 +28,10 @@ function setupEventListeners() {
     chatInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') sendMessage();
     });
-    
-    
+
+    // New chat button
+    document.getElementById('newChatBtn').addEventListener('click', startNewChat);
+
     // Suggested questions
     document.querySelectorAll('.suggested-item').forEach(button => {
         button.addEventListener('click', (e) => {
@@ -122,10 +124,21 @@ function addMessage(content, type, sources = null, isWelcome = false) {
     let html = `<div class="message-content">${displayContent}</div>`;
     
     if (sources && sources.length > 0) {
+        // Build clickable source links as list items
+        const sourceLinks = sources.map(source => {
+            if (typeof source === 'object' && source.url) {
+                // Render as link (opens in new tab)
+                return `<li><a href="${source.url}" target="_blank" rel="noopener" class="source-link">${source.name}</a></li>`;
+            } else if (typeof source === 'object') {
+                return `<li>${source.name}</li>`;  // No URL available
+            }
+            return `<li>${source}</li>`;  // Fallback for plain strings
+        });
+
         html += `
             <details class="sources-collapsible">
                 <summary class="sources-header">Sources</summary>
-                <div class="sources-content">${sources.join(', ')}</div>
+                <ul class="sources-list">${sourceLinks.join('')}</ul>
             </details>
         `;
     }
@@ -150,6 +163,25 @@ async function createNewSession() {
     currentSessionId = null;
     chatMessages.innerHTML = '';
     addMessage('Welcome to the Course Materials Assistant! I can help you with questions about courses, lessons and specific content. What would you like to know?', 'assistant', null, true);
+}
+
+async function startNewChat() {
+    // Cleanup backend session if exists
+    if (currentSessionId) {
+        try {
+            await fetch(`${API_URL}/sessions/${currentSessionId}`, {
+                method: 'DELETE'
+            });
+        } catch (error) {
+            console.warn('Failed to cleanup session:', error);
+        }
+    }
+
+    // Reset frontend state
+    currentSessionId = null;
+    chatMessages.innerHTML = '';
+    addMessage('Welcome to the Course Materials Assistant! I can help you with questions about courses, lessons and specific content. What would you like to know?', 'assistant', null, true);
+    chatInput.focus();
 }
 
 // Load course statistics

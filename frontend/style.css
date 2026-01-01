@@ -111,6 +111,41 @@ header h1 {
     margin-bottom: 0;
 }
 
+/* New Chat Button */
+.new-chat-section {
+    margin-bottom: 1.5rem;
+}
+
+.new-chat-btn {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    padding: 0.5rem 0;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    transition: color 0.2s ease;
+    list-style: none;
+    outline: none;
+    box-shadow: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+.new-chat-btn:hover {
+    color: var(--primary-color);
+}
+
+.new-chat-btn:focus {
+    outline: none;
+    color: var(--primary-color);
+}
+
 /* Main Chat Area */
 .chat-main {
     flex: 1;
@@ -243,6 +278,32 @@ header h1 {
 .sources-content {
     padding: 0 0.5rem 0.25rem 1.5rem;
     color: var(--text-secondary);
+}
+
+/* Sources list styling */
+.sources-list {
+    list-style: disc;
+    padding-left: 1.25rem;
+    margin: 0.5rem 0;
+}
+
+.sources-list li {
+    margin: 0.4rem 0;
+    line-height: 1.5;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+}
+
+.source-link {
+    color: #60a5fa;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.source-link:hover {
+    color: #93c5fd;
+    text-decoration: underline;
 }
 
 /* Markdown formatting styles */
