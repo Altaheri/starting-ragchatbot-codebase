@@ -16,5 +16,21 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "black>=25.12.0",
     "pytest>=9.0.2",
 ]
+
+[tool.black]
+line-length = 88
+target-version = ["py313"]
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+    | \.venv
+    | __pycache__
+    | \.eggs
+    | build
+    | dist
+)/
+'''

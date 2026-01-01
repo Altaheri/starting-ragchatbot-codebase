@@ -8,13 +8,14 @@ These tests evaluate:
 4. Course name resolution
 5. Result formatting
 """
+
 import pytest
 import sys
 import os
 import json
 from unittest.mock import MagicMock, patch
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from search_tools import CourseSearchTool, CourseOutlineTool, ToolManager
 from vector_store import SearchResults
@@ -23,45 +24,43 @@ from vector_store import SearchResults
 class TestCourseSearchToolExecute:
     """Tests for CourseSearchTool.execute() method"""
 
-    def test_execute_basic_query_returns_formatted_results(self, course_search_tool, mock_vector_store):
+    def test_execute_basic_query_returns_formatted_results(
+        self, course_search_tool, mock_vector_store
+    ):
         """Test that a basic query returns properly formatted results"""
         result = course_search_tool.execute(query="machine learning")
 
         # Verify search was called
         mock_vector_store.search.assert_called_once_with(
-            query="machine learning",
-            course_name=None,
-            lesson_number=None
+            query="machine learning", course_name=None, lesson_number=None
         )
 
         # Verify result contains expected content
         assert "Test Course" in result
         assert "machine learning" in result.lower() or "test content" in result.lower()
 
-    def test_execute_with_course_name_filters_correctly(self, course_search_tool, mock_vector_store):
+    def test_execute_with_course_name_filters_correctly(
+        self, course_search_tool, mock_vector_store
+    ):
         """Test that course_name parameter is passed to search"""
         result = course_search_tool.execute(
-            query="neural networks",
-            course_name="Deep Learning Course"
+            query="neural networks", course_name="Deep Learning Course"
         )
 
         mock_vector_store.search.assert_called_once_with(
             query="neural networks",
             course_name="Deep Learning Course",
-            lesson_number=None
+            lesson_number=None,
         )
 
-    def test_execute_with_lesson_number_filters_correctly(self, course_search_tool, mock_vector_store):
+    def test_execute_with_lesson_number_filters_correctly(
+        self, course_search_tool, mock_vector_store
+    ):
         """Test that lesson_number parameter is passed to search"""
-        result = course_search_tool.execute(
-            query="backpropagation",
-            lesson_number=3
-        )
+        result = course_search_tool.execute(query="backpropagation", lesson_number=3)
 
         mock_vector_store.search.assert_called_once_with(
-            query="backpropagation",
-            course_name=None,
-            lesson_number=3
+            query="backpropagation", course_name=None, lesson_number=3
         )
 
     def test_execute_with_all_parameters(self, course_search_tool, mock_vector_store):
@@ -69,41 +68,46 @@ class TestCourseSearchToolExecute:
         result = course_search_tool.execute(
             query="activation functions",
             course_name="Neural Networks 101",
-            lesson_number=5
+            lesson_number=5,
         )
 
         mock_vector_store.search.assert_called_once_with(
             query="activation functions",
             course_name="Neural Networks 101",
-            lesson_number=5
+            lesson_number=5,
         )
 
-    def test_execute_returns_error_message_on_search_error(self, mock_error_vector_store):
+    def test_execute_returns_error_message_on_search_error(
+        self, mock_error_vector_store
+    ):
         """Test that errors from vector store are returned properly"""
         tool = CourseSearchTool(mock_error_vector_store)
         result = tool.execute(query="test query")
 
         assert "error" in result.lower() or "failed" in result.lower()
 
-    def test_execute_returns_no_results_message_when_empty(self, mock_empty_vector_store):
+    def test_execute_returns_no_results_message_when_empty(
+        self, mock_empty_vector_store
+    ):
         """Test that empty results return appropriate message"""
         tool = CourseSearchTool(mock_empty_vector_store)
         result = tool.execute(query="nonexistent topic")
 
         assert "no relevant content" in result.lower() or "not found" in result.lower()
 
-    def test_execute_with_course_filter_includes_filter_in_no_results_message(self, mock_empty_vector_store):
+    def test_execute_with_course_filter_includes_filter_in_no_results_message(
+        self, mock_empty_vector_store
+    ):
         """Test that course name appears in 'no results' message"""
         tool = CourseSearchTool(mock_empty_vector_store)
-        result = tool.execute(
-            query="obscure topic",
-            course_name="Specific Course"
-        )
+        result = tool.execute(query="obscure topic", course_name="Specific Course")
 
         # Should mention the course in the no-results message
         assert "no" in result.lower()
 
-    def test_execute_tracks_sources_correctly(self, course_search_tool, mock_vector_store):
+    def test_execute_tracks_sources_correctly(
+        self, course_search_tool, mock_vector_store
+    ):
         """Test that last_sources is populated after search"""
         course_search_tool.execute(query="test query")
 
@@ -111,7 +115,9 @@ class TestCourseSearchToolExecute:
         assert len(sources) > 0
         assert "name" in sources[0]
 
-    def test_execute_source_includes_lesson_number_when_available(self, course_search_tool, mock_vector_store):
+    def test_execute_source_includes_lesson_number_when_available(
+        self, course_search_tool, mock_vector_store
+    ):
         """Test that sources include lesson info when present"""
         course_search_tool.execute(query="test query")
 
@@ -200,10 +206,7 @@ class TestToolManager:
 
     def test_execute_tool_calls_correct_tool(self, tool_manager, mock_vector_store):
         """Test that execute_tool routes to the right tool"""
-        result = tool_manager.execute_tool(
-            "search_course_content",
-            query="test query"
-        )
+        result = tool_manager.execute_tool("search_course_content", query="test query")
 
         mock_vector_store.search.assert_called_once()
 
@@ -213,7 +216,9 @@ class TestToolManager:
 
         assert "not found" in result.lower()
 
-    def test_get_last_sources_returns_sources_from_search(self, tool_manager, mock_vector_store):
+    def test_get_last_sources_returns_sources_from_search(
+        self, tool_manager, mock_vector_store
+    ):
         """Test that sources are retrieved after search"""
         tool_manager.execute_tool("search_course_content", query="test")
 
@@ -235,9 +240,7 @@ class TestSearchResultsFormatting:
     def test_format_results_with_missing_metadata_fields(self, mock_vector_store):
         """Test formatting when metadata has missing fields"""
         mock_vector_store.search.return_value = SearchResults(
-            documents=["Test content"],
-            metadata=[{}],  # Empty metadata
-            distances=[0.1]
+            documents=["Test content"], metadata=[{}], distances=[0.1]  # Empty metadata
         )
 
         tool = CourseSearchTool(mock_vector_store)
@@ -252,7 +255,7 @@ class TestSearchResultsFormatting:
         mock_vector_store.search.return_value = SearchResults(
             documents=["Test content"],
             metadata=[{"course_title": "Test", "lesson_number": None}],
-            distances=[0.1]
+            distances=[0.1],
         )
         mock_vector_store.get_lesson_link.return_value = None
 

@@ -8,18 +8,20 @@ These tests evaluate:
 4. Session management integration
 5. Error scenarios that might cause 'query failed'
 """
+
 import pytest
 import sys
 import os
 from unittest.mock import MagicMock, patch, PropertyMock
 from dataclasses import dataclass
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 
 @dataclass
 class MockConfig:
     """Mock configuration for testing"""
+
     ANTHROPIC_API_KEY: str = "test-api-key"
     ANTHROPIC_MODEL: str = "claude-sonnet-4-20250514"
     EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
@@ -32,7 +34,10 @@ class MockConfig:
 
 class MockContentBlock:
     """Mock for Anthropic content block"""
-    def __init__(self, block_type, text=None, name=None, input_data=None, block_id=None):
+
+    def __init__(
+        self, block_type, text=None, name=None, input_data=None, block_id=None
+    ):
         self.type = block_type
         self.text = text
         self.name = name
@@ -42,6 +47,7 @@ class MockContentBlock:
 
 class MockResponse:
     """Mock for Anthropic API response"""
+
     def __init__(self, stop_reason, content):
         self.stop_reason = stop_reason
         self.content = content
@@ -50,10 +56,12 @@ class MockResponse:
 class TestRAGSystemQuery:
     """Tests for RAG system query method"""
 
-    @patch('anthropic.Anthropic')
-    @patch('chromadb.PersistentClient')
-    @patch('chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction')
-    def test_query_returns_response_and_sources(self, mock_embedding, mock_chroma, mock_anthropic):
+    @patch("anthropic.Anthropic")
+    @patch("chromadb.PersistentClient")
+    @patch("chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction")
+    def test_query_returns_response_and_sources(
+        self, mock_embedding, mock_chroma, mock_anthropic
+    ):
         """Test that query returns both response and sources"""
         # Setup mocks
         mock_client = MagicMock()
@@ -62,21 +70,22 @@ class TestRAGSystemQuery:
         # Direct response without tool use
         mock_response = MockResponse(
             stop_reason="end_turn",
-            content=[MockContentBlock("text", text="This is the answer")]
+            content=[MockContentBlock("text", text="This is the answer")],
         )
         mock_client.messages.create.return_value = mock_response
 
         # Setup ChromaDB mock
         mock_collection = MagicMock()
         mock_chroma.return_value.get_or_create_collection.return_value = mock_collection
-        mock_collection.get.return_value = {'ids': [], 'metadatas': []}
+        mock_collection.get.return_value = {"ids": [], "metadatas": []}
         mock_collection.query.return_value = {
-            'documents': [[]],
-            'metadatas': [[]],
-            'distances': [[]]
+            "documents": [[]],
+            "metadatas": [[]],
+            "distances": [[]],
         }
 
         from rag_system import RAGSystem
+
         config = MockConfig()
         rag = RAGSystem(config)
 
@@ -86,10 +95,12 @@ class TestRAGSystemQuery:
         assert isinstance(response, str)
         assert isinstance(sources, list)
 
-    @patch('anthropic.Anthropic')
-    @patch('chromadb.PersistentClient')
-    @patch('chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction')
-    def test_query_with_tool_use_executes_search(self, mock_embedding, mock_chroma, mock_anthropic):
+    @patch("anthropic.Anthropic")
+    @patch("chromadb.PersistentClient")
+    @patch("chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction")
+    def test_query_with_tool_use_executes_search(
+        self, mock_embedding, mock_chroma, mock_anthropic
+    ):
         """Test that tool use triggers search and returns results"""
         mock_client = MagicMock()
         mock_anthropic.return_value = mock_client
@@ -102,15 +113,15 @@ class TestRAGSystemQuery:
                     "tool_use",
                     name="search_course_content",
                     input_data={"query": "machine learning basics"},
-                    block_id="tool_123"
+                    block_id="tool_123",
                 )
-            ]
+            ],
         )
 
         # Second response: final answer
         final_response = MockResponse(
             stop_reason="end_turn",
-            content=[MockContentBlock("text", text="Machine learning is...")]
+            content=[MockContentBlock("text", text="Machine learning is...")],
         )
 
         mock_client.messages.create.side_effect = [tool_use_response, final_response]
@@ -118,14 +129,15 @@ class TestRAGSystemQuery:
         # Setup ChromaDB mock with actual results
         mock_collection = MagicMock()
         mock_chroma.return_value.get_or_create_collection.return_value = mock_collection
-        mock_collection.get.return_value = {'ids': [], 'metadatas': []}
+        mock_collection.get.return_value = {"ids": [], "metadatas": []}
         mock_collection.query.return_value = {
-            'documents': [["Machine learning is a subset of AI"]],
-            'metadatas': [[{"course_title": "ML Course", "lesson_number": 1}]],
-            'distances': [[0.1]]
+            "documents": [["Machine learning is a subset of AI"]],
+            "metadatas": [[{"course_title": "ML Course", "lesson_number": 1}]],
+            "distances": [[0.1]],
         }
 
         from rag_system import RAGSystem
+
         config = MockConfig()
         rag = RAGSystem(config)
 
@@ -134,10 +146,12 @@ class TestRAGSystemQuery:
         assert "Machine learning" in response
         assert mock_client.messages.create.call_count == 2
 
-    @patch('anthropic.Anthropic')
-    @patch('chromadb.PersistentClient')
-    @patch('chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction')
-    def test_query_returns_sources_after_search(self, mock_embedding, mock_chroma, mock_anthropic):
+    @patch("anthropic.Anthropic")
+    @patch("chromadb.PersistentClient")
+    @patch("chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction")
+    def test_query_returns_sources_after_search(
+        self, mock_embedding, mock_chroma, mock_anthropic
+    ):
         """Test that sources are populated after tool search"""
         mock_client = MagicMock()
         mock_anthropic.return_value = mock_client
@@ -149,33 +163,35 @@ class TestRAGSystemQuery:
                     "tool_use",
                     name="search_course_content",
                     input_data={"query": "test"},
-                    block_id="tool_123"
+                    block_id="tool_123",
                 )
-            ]
+            ],
         )
 
         final_response = MockResponse(
-            stop_reason="end_turn",
-            content=[MockContentBlock("text", text="Answer")]
+            stop_reason="end_turn", content=[MockContentBlock("text", text="Answer")]
         )
 
         mock_client.messages.create.side_effect = [tool_use_response, final_response]
 
         mock_collection = MagicMock()
         mock_chroma.return_value.get_or_create_collection.return_value = mock_collection
-        mock_collection.get.return_value = {'ids': [], 'metadatas': []}
+        mock_collection.get.return_value = {"ids": [], "metadatas": []}
         mock_collection.query.return_value = {
-            'documents': [["Content"]],
-            'metadatas': [[{"course_title": "Test Course", "lesson_number": 1}]],
-            'distances': [[0.1]]
+            "documents": [["Content"]],
+            "metadatas": [[{"course_title": "Test Course", "lesson_number": 1}]],
+            "distances": [[0.1]],
         }
 
         from rag_system import RAGSystem
+
         config = MockConfig()
         rag = RAGSystem(config)
 
         # Mock get_lesson_link
-        rag.vector_store.get_lesson_link = MagicMock(return_value="https://example.com/lesson")
+        rag.vector_store.get_lesson_link = MagicMock(
+            return_value="https://example.com/lesson"
+        )
 
         response, sources = rag.query("Test query")
 
@@ -183,25 +199,28 @@ class TestRAGSystemQuery:
         assert len(sources) > 0
         assert "Test Course" in sources[0]["name"]
 
-    @patch('anthropic.Anthropic')
-    @patch('chromadb.PersistentClient')
-    @patch('chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction')
-    def test_query_with_session_includes_history(self, mock_embedding, mock_chroma, mock_anthropic):
+    @patch("anthropic.Anthropic")
+    @patch("chromadb.PersistentClient")
+    @patch("chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction")
+    def test_query_with_session_includes_history(
+        self, mock_embedding, mock_chroma, mock_anthropic
+    ):
         """Test that session history is passed to AI generator"""
         mock_client = MagicMock()
         mock_anthropic.return_value = mock_client
 
         mock_response = MockResponse(
             stop_reason="end_turn",
-            content=[MockContentBlock("text", text="Follow-up answer")]
+            content=[MockContentBlock("text", text="Follow-up answer")],
         )
         mock_client.messages.create.return_value = mock_response
 
         mock_collection = MagicMock()
         mock_chroma.return_value.get_or_create_collection.return_value = mock_collection
-        mock_collection.get.return_value = {'ids': [], 'metadatas': []}
+        mock_collection.get.return_value = {"ids": [], "metadatas": []}
 
         from rag_system import RAGSystem
+
         config = MockConfig()
         rag = RAGSystem(config)
 
@@ -213,22 +232,28 @@ class TestRAGSystemQuery:
 
         # Verify the API was called with history in system prompt
         call_kwargs = mock_client.messages.create.call_args[1]
-        assert "Previous Q" in call_kwargs["system"] or "Previous A" in call_kwargs["system"]
+        assert (
+            "Previous Q" in call_kwargs["system"]
+            or "Previous A" in call_kwargs["system"]
+        )
 
 
 class TestRAGSystemToolRegistration:
     """Tests for tool registration in RAG system"""
 
-    @patch('anthropic.Anthropic')
-    @patch('chromadb.PersistentClient')
-    @patch('chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction')
-    def test_both_tools_are_registered(self, mock_embedding, mock_chroma, mock_anthropic):
+    @patch("anthropic.Anthropic")
+    @patch("chromadb.PersistentClient")
+    @patch("chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction")
+    def test_both_tools_are_registered(
+        self, mock_embedding, mock_chroma, mock_anthropic
+    ):
         """Test that both search and outline tools are registered"""
         mock_collection = MagicMock()
         mock_chroma.return_value.get_or_create_collection.return_value = mock_collection
-        mock_collection.get.return_value = {'ids': [], 'metadatas': []}
+        mock_collection.get.return_value = {"ids": [], "metadatas": []}
 
         from rag_system import RAGSystem
+
         config = MockConfig()
         rag = RAGSystem(config)
 
@@ -238,21 +263,24 @@ class TestRAGSystemToolRegistration:
         assert "search_course_content" in tool_names
         assert "get_course_outline" in tool_names
 
-    @patch('anthropic.Anthropic')
-    @patch('chromadb.PersistentClient')
-    @patch('chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction')
-    def test_tool_manager_can_execute_search_tool(self, mock_embedding, mock_chroma, mock_anthropic):
+    @patch("anthropic.Anthropic")
+    @patch("chromadb.PersistentClient")
+    @patch("chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction")
+    def test_tool_manager_can_execute_search_tool(
+        self, mock_embedding, mock_chroma, mock_anthropic
+    ):
         """Test that tool manager can execute search tool"""
         mock_collection = MagicMock()
         mock_chroma.return_value.get_or_create_collection.return_value = mock_collection
-        mock_collection.get.return_value = {'ids': [], 'metadatas': []}
+        mock_collection.get.return_value = {"ids": [], "metadatas": []}
         mock_collection.query.return_value = {
-            'documents': [["Test content"]],
-            'metadatas': [[{"course_title": "Test", "lesson_number": 1}]],
-            'distances': [[0.1]]
+            "documents": [["Test content"]],
+            "metadatas": [[{"course_title": "Test", "lesson_number": 1}]],
+            "distances": [[0.1]],
         }
 
         from rag_system import RAGSystem
+
         config = MockConfig()
         rag = RAGSystem(config)
 
@@ -260,45 +288,48 @@ class TestRAGSystemToolRegistration:
         rag.vector_store.get_lesson_link = MagicMock(return_value=None)
 
         result = rag.tool_manager.execute_tool(
-            "search_course_content",
-            query="test query"
+            "search_course_content", query="test query"
         )
 
         assert result is not None
         assert isinstance(result, str)
 
-    @patch('anthropic.Anthropic')
-    @patch('chromadb.PersistentClient')
-    @patch('chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction')
-    def test_tool_manager_can_execute_outline_tool(self, mock_embedding, mock_chroma, mock_anthropic):
+    @patch("anthropic.Anthropic")
+    @patch("chromadb.PersistentClient")
+    @patch("chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction")
+    def test_tool_manager_can_execute_outline_tool(
+        self, mock_embedding, mock_chroma, mock_anthropic
+    ):
         """Test that tool manager can execute outline tool"""
         import json
 
         mock_collection = MagicMock()
         mock_chroma.return_value.get_or_create_collection.return_value = mock_collection
         mock_collection.get.return_value = {
-            'ids': ['Test Course'],
-            'metadatas': [{
-                'title': 'Test Course',
-                'course_link': 'https://example.com',
-                'lessons_json': json.dumps([
-                    {"lesson_number": 1, "lesson_title": "Intro"}
-                ])
-            }]
+            "ids": ["Test Course"],
+            "metadatas": [
+                {
+                    "title": "Test Course",
+                    "course_link": "https://example.com",
+                    "lessons_json": json.dumps(
+                        [{"lesson_number": 1, "lesson_title": "Intro"}]
+                    ),
+                }
+            ],
         }
         mock_collection.query.return_value = {
-            'documents': [["Test Course"]],
-            'metadatas': [[{"title": "Test Course"}]],
-            'distances': [[0.1]]
+            "documents": [["Test Course"]],
+            "metadatas": [[{"title": "Test Course"}]],
+            "distances": [[0.1]],
         }
 
         from rag_system import RAGSystem
+
         config = MockConfig()
         rag = RAGSystem(config)
 
         result = rag.tool_manager.execute_tool(
-            "get_course_outline",
-            course_title="Test Course"
+            "get_course_outline", course_title="Test Course"
         )
 
         assert "Test Course" in result
@@ -308,10 +339,12 @@ class TestRAGSystemToolRegistration:
 class TestRAGSystemErrorScenarios:
     """Tests for error scenarios that might cause 'query failed'"""
 
-    @patch('anthropic.Anthropic')
-    @patch('chromadb.PersistentClient')
-    @patch('chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction')
-    def test_handles_empty_search_results(self, mock_embedding, mock_chroma, mock_anthropic):
+    @patch("anthropic.Anthropic")
+    @patch("chromadb.PersistentClient")
+    @patch("chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction")
+    def test_handles_empty_search_results(
+        self, mock_embedding, mock_chroma, mock_anthropic
+    ):
         """Test handling when search returns no results"""
         mock_client = MagicMock()
         mock_anthropic.return_value = mock_client
@@ -323,28 +356,29 @@ class TestRAGSystemErrorScenarios:
                     "tool_use",
                     name="search_course_content",
                     input_data={"query": "nonexistent topic"},
-                    block_id="tool_123"
+                    block_id="tool_123",
                 )
-            ]
+            ],
         )
 
         final_response = MockResponse(
             stop_reason="end_turn",
-            content=[MockContentBlock("text", text="No results found")]
+            content=[MockContentBlock("text", text="No results found")],
         )
 
         mock_client.messages.create.side_effect = [tool_use_response, final_response]
 
         mock_collection = MagicMock()
         mock_chroma.return_value.get_or_create_collection.return_value = mock_collection
-        mock_collection.get.return_value = {'ids': [], 'metadatas': []}
+        mock_collection.get.return_value = {"ids": [], "metadatas": []}
         mock_collection.query.return_value = {
-            'documents': [[]],
-            'metadatas': [[]],
-            'distances': [[]]
+            "documents": [[]],
+            "metadatas": [[]],
+            "distances": [[]],
         }
 
         from rag_system import RAGSystem
+
         config = MockConfig()
         rag = RAGSystem(config)
 
@@ -354,10 +388,12 @@ class TestRAGSystemErrorScenarios:
         assert response is not None
         assert "failed" not in response.lower() or "no" in response.lower()
 
-    @patch('anthropic.Anthropic')
-    @patch('chromadb.PersistentClient')
-    @patch('chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction')
-    def test_handles_api_error_gracefully(self, mock_embedding, mock_chroma, mock_anthropic):
+    @patch("anthropic.Anthropic")
+    @patch("chromadb.PersistentClient")
+    @patch("chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction")
+    def test_handles_api_error_gracefully(
+        self, mock_embedding, mock_chroma, mock_anthropic
+    ):
         """Test handling of API errors"""
         mock_client = MagicMock()
         mock_anthropic.return_value = mock_client
@@ -367,9 +403,10 @@ class TestRAGSystemErrorScenarios:
 
         mock_collection = MagicMock()
         mock_chroma.return_value.get_or_create_collection.return_value = mock_collection
-        mock_collection.get.return_value = {'ids': [], 'metadatas': []}
+        mock_collection.get.return_value = {"ids": [], "metadatas": []}
 
         from rag_system import RAGSystem
+
         config = MockConfig()
         rag = RAGSystem(config)
 
@@ -377,10 +414,12 @@ class TestRAGSystemErrorScenarios:
         with pytest.raises(Exception):
             rag.query("Test query")
 
-    @patch('anthropic.Anthropic')
-    @patch('chromadb.PersistentClient')
-    @patch('chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction')
-    def test_handles_chromadb_search_error(self, mock_embedding, mock_chroma, mock_anthropic):
+    @patch("anthropic.Anthropic")
+    @patch("chromadb.PersistentClient")
+    @patch("chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction")
+    def test_handles_chromadb_search_error(
+        self, mock_embedding, mock_chroma, mock_anthropic
+    ):
         """Test handling of ChromaDB search errors"""
         mock_client = MagicMock()
         mock_anthropic.return_value = mock_client
@@ -392,25 +431,26 @@ class TestRAGSystemErrorScenarios:
                     "tool_use",
                     name="search_course_content",
                     input_data={"query": "test"},
-                    block_id="tool_123"
+                    block_id="tool_123",
                 )
-            ]
+            ],
         )
 
         final_response = MockResponse(
             stop_reason="end_turn",
-            content=[MockContentBlock("text", text="Error occurred")]
+            content=[MockContentBlock("text", text="Error occurred")],
         )
 
         mock_client.messages.create.side_effect = [tool_use_response, final_response]
 
         mock_collection = MagicMock()
         mock_chroma.return_value.get_or_create_collection.return_value = mock_collection
-        mock_collection.get.return_value = {'ids': [], 'metadatas': []}
+        mock_collection.get.return_value = {"ids": [], "metadatas": []}
         # Simulate ChromaDB error
         mock_collection.query.side_effect = Exception("ChromaDB Error")
 
         from rag_system import RAGSystem
+
         config = MockConfig()
         rag = RAGSystem(config)
 
@@ -424,10 +464,12 @@ class TestRAGSystemErrorScenarios:
 class TestRAGSystemSourcesHandling:
     """Tests specifically for sources handling"""
 
-    @patch('anthropic.Anthropic')
-    @patch('chromadb.PersistentClient')
-    @patch('chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction')
-    def test_sources_are_reset_after_query(self, mock_embedding, mock_chroma, mock_anthropic):
+    @patch("anthropic.Anthropic")
+    @patch("chromadb.PersistentClient")
+    @patch("chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction")
+    def test_sources_are_reset_after_query(
+        self, mock_embedding, mock_chroma, mock_anthropic
+    ):
         """Test that sources are reset between queries"""
         mock_client = MagicMock()
         mock_anthropic.return_value = mock_client
@@ -439,38 +481,39 @@ class TestRAGSystemSourcesHandling:
                     "tool_use",
                     name="search_course_content",
                     input_data={"query": "test"},
-                    block_id="tool_123"
+                    block_id="tool_123",
                 )
-            ]
+            ],
         )
 
         final_response = MockResponse(
-            stop_reason="end_turn",
-            content=[MockContentBlock("text", text="Answer")]
+            stop_reason="end_turn", content=[MockContentBlock("text", text="Answer")]
         )
 
         # Direct response for second query
         direct_response = MockResponse(
             stop_reason="end_turn",
-            content=[MockContentBlock("text", text="Direct answer")]
+            content=[MockContentBlock("text", text="Direct answer")],
         )
 
         # Provide enough responses for both queries
         mock_client.messages.create.side_effect = [
-            tool_use_response, final_response,  # First query (tool use + final)
-            direct_response  # Second query (direct)
+            tool_use_response,
+            final_response,  # First query (tool use + final)
+            direct_response,  # Second query (direct)
         ]
 
         mock_collection = MagicMock()
         mock_chroma.return_value.get_or_create_collection.return_value = mock_collection
-        mock_collection.get.return_value = {'ids': [], 'metadatas': []}
+        mock_collection.get.return_value = {"ids": [], "metadatas": []}
         mock_collection.query.return_value = {
-            'documents': [["Content"]],
-            'metadatas': [[{"course_title": "Test", "lesson_number": 1}]],
-            'distances': [[0.1]]
+            "documents": [["Content"]],
+            "metadatas": [[{"course_title": "Test", "lesson_number": 1}]],
+            "distances": [[0.1]],
         }
 
         from rag_system import RAGSystem
+
         config = MockConfig()
         rag = RAGSystem(config)
         rag.vector_store.get_lesson_link = MagicMock(return_value=None)

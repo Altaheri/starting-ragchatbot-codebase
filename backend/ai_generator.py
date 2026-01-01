@@ -1,9 +1,10 @@
 import anthropic
 from typing import List, Optional, Dict, Any
 
+
 class AIGenerator:
     """Handles interactions with Anthropic's Claude API for generating responses"""
-    
+
     # Static system prompt to avoid rebuilding on each call
     SYSTEM_PROMPT = """ You are an AI assistant specialized in course materials and educational content with access to search tools for course information.
 
@@ -45,18 +46,17 @@ Provide only the direct answer to what was asked.
     def __init__(self, api_key: str, model: str):
         self.client = anthropic.Anthropic(api_key=api_key)
         self.model = model
-        
+
         # Pre-build base API parameters
-        self.base_params = {
-            "model": self.model,
-            "temperature": 0,
-            "max_tokens": 800
-        }
-    
-    def generate_response(self, query: str,
-                         conversation_history: Optional[str] = None,
-                         tools: Optional[List] = None,
-                         tool_manager=None) -> str:
+        self.base_params = {"model": self.model, "temperature": 0, "max_tokens": 800}
+
+    def generate_response(
+        self,
+        query: str,
+        conversation_history: Optional[str] = None,
+        tools: Optional[List] = None,
+        tool_manager=None,
+    ) -> str:
         """
         Generate AI response with support for up to MAX_TOOL_ROUNDS sequential tool calls.
 
@@ -102,12 +102,14 @@ Provide only the direct answer to what was asked.
             return f"{self.SYSTEM_PROMPT}\n\nPrevious conversation:\n{conversation_history}"
         return self.SYSTEM_PROMPT
 
-    def _make_api_call(self, messages: List, system_content: str, tools: Optional[List] = None):
+    def _make_api_call(
+        self, messages: List, system_content: str, tools: Optional[List] = None
+    ):
         """Make a single API call with optional tools."""
         api_params = {
             **self.base_params,
             "messages": messages,
-            "system": system_content
+            "system": system_content,
         }
 
         if tools:
@@ -121,7 +123,9 @@ Provide only the direct answer to what was asked.
         for content_block in response.content:
             if content_block.type == "text":
                 return content_block.text
-        return "I apologize, but I was unable to process your request. Please try again."
+        return (
+            "I apologize, but I was unable to process your request. Please try again."
+        )
 
     def _execute_tools_safely(self, response, tool_manager) -> tuple:
         """
@@ -137,21 +141,24 @@ Provide only the direct answer to what was asked.
             if content_block.type == "tool_use":
                 try:
                     result = tool_manager.execute_tool(
-                        content_block.name,
-                        **content_block.input
+                        content_block.name, **content_block.input
                     )
-                    tool_results.append({
-                        "type": "tool_result",
-                        "tool_use_id": content_block.id,
-                        "content": result
-                    })
+                    tool_results.append(
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": content_block.id,
+                            "content": result,
+                        }
+                    )
                 except Exception as e:
-                    tool_results.append({
-                        "type": "tool_result",
-                        "tool_use_id": content_block.id,
-                        "content": f"Error executing tool: {str(e)}",
-                        "is_error": True
-                    })
+                    tool_results.append(
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": content_block.id,
+                            "content": f"Error executing tool: {str(e)}",
+                            "is_error": True,
+                        }
+                    )
                     had_error = True
 
         return tool_results, had_error
@@ -167,7 +174,7 @@ Provide only the direct answer to what was asked.
         final_params = {
             **self.base_params,
             "messages": messages,
-            "system": system_content
+            "system": system_content,
         }
         final_response = self.client.messages.create(**final_params)
         return final_response.content[0].text

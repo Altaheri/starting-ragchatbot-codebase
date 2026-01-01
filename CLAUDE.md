@@ -34,6 +34,27 @@ Or use the shell script (requires Git Bash on Windows):
 - Web UI: http://localhost:8000
 - API Docs: http://localhost:8000/docs
 
+### Code Quality
+
+Format code with black:
+```bash
+./scripts/format.sh
+# or directly:
+uv run black .
+```
+
+Check formatting without changes:
+```bash
+./scripts/check-format.sh
+# or directly:
+uv run black --check .
+```
+
+Run all quality checks (formatting + tests):
+```bash
+./scripts/quality.sh
+```
+
 ## Architecture
 
 ### Query Flow

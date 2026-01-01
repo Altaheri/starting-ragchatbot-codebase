@@ -1,6 +1,7 @@
 """
 Shared fixtures for RAG chatbot tests
 """
+
 import pytest
 import sys
 import os
@@ -9,7 +10,7 @@ from unittest.mock import MagicMock, patch
 from dataclasses import dataclass
 
 # Add backend to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from vector_store import VectorStore, SearchResults
 from search_tools import CourseSearchTool, CourseOutlineTool, ToolManager
@@ -25,7 +26,7 @@ def mock_vector_store():
     mock_store.search.return_value = SearchResults(
         documents=["This is test content about machine learning."],
         metadata=[{"course_title": "Test Course", "lesson_number": 1}],
-        distances=[0.1]
+        distances=[0.1],
     )
 
     # Setup course resolution
@@ -37,15 +38,19 @@ def mock_vector_store():
     # Setup course catalog get
     mock_store.course_catalog = MagicMock()
     mock_store.course_catalog.get.return_value = {
-        'metadatas': [{
-            'title': 'Test Course',
-            'course_link': 'https://example.com/course',
-            'lessons_json': json.dumps([
-                {"lesson_number": 1, "lesson_title": "Introduction"},
-                {"lesson_number": 2, "lesson_title": "Advanced Topics"}
-            ])
-        }],
-        'ids': ['Test Course']
+        "metadatas": [
+            {
+                "title": "Test Course",
+                "course_link": "https://example.com/course",
+                "lessons_json": json.dumps(
+                    [
+                        {"lesson_number": 1, "lesson_title": "Introduction"},
+                        {"lesson_number": 2, "lesson_title": "Advanced Topics"},
+                    ]
+                ),
+            }
+        ],
+        "ids": ["Test Course"],
     }
 
     return mock_store
@@ -58,9 +63,7 @@ def mock_empty_vector_store():
 
     # Setup empty search results
     mock_store.search.return_value = SearchResults(
-        documents=[],
-        metadata=[],
-        distances=[]
+        documents=[], metadata=[], distances=[]
     )
 
     # Course not found
@@ -75,7 +78,9 @@ def mock_error_vector_store():
     mock_store = MagicMock(spec=VectorStore)
 
     # Setup error results
-    mock_store.search.return_value = SearchResults.empty("Search error: Connection failed")
+    mock_store.search.return_value = SearchResults.empty(
+        "Search error: Connection failed"
+    )
 
     return mock_store
 
@@ -109,9 +114,17 @@ def sample_course():
         course_link="https://example.com/ml-course",
         instructor="Dr. Smith",
         lessons=[
-            Lesson(lesson_number=1, title="What is ML?", lesson_link="https://example.com/ml/1"),
-            Lesson(lesson_number=2, title="Supervised Learning", lesson_link="https://example.com/ml/2"),
-        ]
+            Lesson(
+                lesson_number=1,
+                title="What is ML?",
+                lesson_link="https://example.com/ml/1",
+            ),
+            Lesson(
+                lesson_number=2,
+                title="Supervised Learning",
+                lesson_link="https://example.com/ml/2",
+            ),
+        ],
     )
 
 
@@ -123,20 +136,21 @@ def sample_chunks():
             content="Machine learning is a subset of AI.",
             course_title="Introduction to Machine Learning",
             lesson_number=1,
-            chunk_index=0
+            chunk_index=0,
         ),
         CourseChunk(
             content="Supervised learning uses labeled data.",
             course_title="Introduction to Machine Learning",
             lesson_number=2,
-            chunk_index=1
-        )
+            chunk_index=1,
+        ),
     ]
 
 
 @dataclass
 class MockConfig:
     """Mock configuration for testing"""
+
     ANTHROPIC_API_KEY: str = "test-api-key"
     ANTHROPIC_MODEL: str = "claude-sonnet-4-20250514"
     EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
