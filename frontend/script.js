@@ -5,7 +5,52 @@ const API_URL = '/api';
 let currentSessionId = null;
 
 // DOM elements
-let chatMessages, chatInput, sendButton, totalCourses, courseTitles;
+let chatMessages, chatInput, sendButton, totalCourses, courseTitles, themeToggle;
+
+// Theme Management
+const ThemeManager = {
+    STORAGE_KEY: 'theme-preference',
+
+    // Get user's preferred theme
+    getPreferredTheme() {
+        // Check localStorage first
+        const stored = localStorage.getItem(this.STORAGE_KEY);
+        if (stored) return stored;
+
+        // Default to dark theme
+        return 'dark';
+    },
+
+    // Set the theme
+    setTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem(this.STORAGE_KEY, theme);
+
+        // Update aria-label for accessibility
+        const toggle = document.getElementById('themeToggle');
+        if (toggle) {
+            toggle.setAttribute('aria-label',
+                theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'
+            );
+        }
+    },
+
+    // Toggle between themes
+    toggle() {
+        const current = document.documentElement.getAttribute('data-theme') || 'dark';
+        const newTheme = current === 'light' ? 'dark' : 'light';
+        this.setTheme(newTheme);
+    },
+
+    // Initialize theme on page load
+    init() {
+        const theme = this.getPreferredTheme();
+        this.setTheme(theme);
+    }
+};
+
+// Initialize theme immediately to prevent flash
+ThemeManager.init();
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -15,7 +60,8 @@ document.addEventListener('DOMContentLoaded', () => {
     sendButton = document.getElementById('sendButton');
     totalCourses = document.getElementById('totalCourses');
     courseTitles = document.getElementById('courseTitles');
-    
+    themeToggle = document.getElementById('themeToggle');
+
     setupEventListeners();
     createNewSession();
     loadCourseStats();
@@ -40,6 +86,11 @@ function setupEventListeners() {
             sendMessage();
         });
     });
+
+    // Theme toggle
+    if (themeToggle) {
+        themeToggle.addEventListener('click', () => ThemeManager.toggle());
+    }
 }
 
 
